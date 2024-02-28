@@ -15,7 +15,7 @@ public class Startup
         services.AddSwagger();//ÅäÖÃ×¢²áSwagger
         services.AddMapper(Assembly.Load("Mbill.Service"));//ÅäÖÃÊµÌåÓ³Éä
         services.AddEasyCaching();//ÅäÖÃ×¢²áEasyCaching»º´æ
-        services.AddMongoClient();//ÅäÖÃ×¢²áMongoDB Client
+        //services.AddMongoClient();//ÅäÖÃ×¢²áMongoDB Client
         services.AddMiniProfilerSetup();//ÅäÖÃ×¢²á¼à¿Ø
         services.AddIpRateLimiting();//ÅäÖÃ×¢²áÏŞÁ÷
         services.AddHealthChecks();//ÅäÖÃ×¢²á½¡¿µ¼ì²é

@@ -1,5 +1,6 @@
 using MongoDB.Driver;
 using Serilog.Events;
+using System.IO;
 
 namespace Mbill;
 
@@ -7,28 +8,15 @@ public class Program
 {
     public static async Task Main(string[] args)
     {
-        Log.Logger = new LoggerConfiguration()
-            .WriteTo.Console(LogEventLevel.Verbose, "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} <s:{SourceContext}>{NewLine}{Exception}")
-            .WriteTo.MongoDBBson(cfg =>
-            {
-                var mongoDbInstance = new MongoClient(Appsettings.MongoDBCon).GetDatabase(Appsettings.MongoDBName);
-                cfg.SetMongoDatabase(mongoDbInstance);
-                cfg.SetCollectionName("logs");      
-            }, LogEventLevel.Warning)
-            .Enrich.FromLogContext()
-            .CreateLogger();
+        SerilogConfig();
         try
         {
-            // 配置雪花ID生成器
             SnowFlake.SnowFlakeConfig();
-
             IHost webHost = CreateHostBuilder(args).Build();
             try
             {
-                using var scope = webHost.Services.CreateScope();
-                // get the IpPolicyStore instance
-                var ipPolicyStore = scope.ServiceProvider.GetRequiredService<IIpPolicyStore>();
-                // seed IP data from appsettings
+                using var scope = webHost.Services.CreateScope();                
+                var ipPolicyStore = scope.ServiceProvider.GetRequiredService<IIpPolicyStore>();                
                 await ipPolicyStore.SeedAsync(); 
             }
             catch (Exception ex)
@@ -58,4 +46,25 @@ public class Program
 #endif
                 ;
             }).UseSerilog();//构建Serilog;
+    private static void SerilogConfig()
+    {
+        var configuration = new ConfigurationBuilder()
+         .SetBasePath(Directory.GetCurrentDirectory())
+         .AddJsonFile("serilogSetting.json", optional: false, reloadOnChange: true)
+         .AddEnvironmentVariables()
+         .Build();
+        var loggerConfig = new LoggerConfiguration().ReadFrom.Configuration(configuration)
+            .Enrich.WithProperty("Application", $"Mbill");
+        Log.Logger = loggerConfig.CreateLogger();
+        //Log.Logger = new LoggerConfiguration()
+        //    .WriteTo.Console(LogEventLevel.Verbose, "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} <s:{SourceContext}>{NewLine}{Exception}")
+        //    .WriteTo.MongoDBBson(cfg =>
+        //    {
+        //        var mongoDbInstance = new MongoClient(Appsettings.MongoDBCon).GetDatabase(Appsettings.MongoDBName);
+        //        cfg.SetMongoDatabase(mongoDbInstance);
+        //        cfg.SetCollectionName("logs");      
+        //    }, LogEventLevel.Warning)
+        //    .Enrich.FromLogContext()
+        //    .CreateLogger();
+    }
 }
